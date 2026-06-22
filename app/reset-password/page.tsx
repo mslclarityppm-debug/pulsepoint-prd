@@ -1,9 +1,11 @@
 // Página para restablecer contraseña con token.
+import { HeartPulse } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { HeartPulse } from "lucide-react";
+
 import { getCurrentUser } from "@/lib/auth";
 import { getCSRFToken } from "@/lib/csrf";
+
 import { FormularioResetPassword } from "./formulario-reset-password";
 
 export const dynamic = "force-dynamic";

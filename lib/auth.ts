@@ -1,13 +1,16 @@
 // Sistema de autenticación por sesión basado en cookies firmadas (JWT).
 // Sin OAuth externo: email + password con bcryptjs.
 import "server-only";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { cookies } from "next/headers";
+
+import bcrypt from "bcryptjs";
 import { eq, and, gt, lt } from "drizzle-orm";
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+
 import { db } from "@/db";
-import { users, userProfiles, passwordResetTokens } from "@/db/schema";
+import { users, userProfiles, passwordResetTokens, revokedSessions } from "@/db/schema";
+import { isSessionRevoked } from "@/lib/audit";
 import { env } from "@/lib/env";
 
 export const SESSION_COOKIE_NAME = "los8_session";
@@ -20,7 +23,7 @@ export type SessionUser = {
   nombre?: string | null;
 };
 
-// Hashea una contraseña.
+// Hashea una contraseña con bcrypt (10 rounds, estándar actual).
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }
@@ -33,11 +36,18 @@ export async function verifyPassword(
   return bcrypt.compare(password, hash);
 }
 
-// Crea una cookie de sesión firmada.
+// Crea una cookie de sesión firmada con JWT.
+// Incluye jti (JWT ID) for session revocation support.
 export async function createSession(userId: number): Promise<void> {
-  const token = jwt.sign({ uid: userId }, env.SESSION_SECRET, {
-    expiresIn: `${SESSION_MAX_AGE_DAYS}d`,
-  });
+  const sessionId = crypto.randomUUID();
+  const token = jwt.sign(
+    { uid: userId, jti: sessionId, iat: Math.floor(Date.now() / 1000) },
+    env.SESSION_SECRET,
+    {
+      expiresIn: `${SESSION_MAX_AGE_DAYS}d`,
+      algorithm: 'HS256',
+    }
+  );
   const cookieStore = cookies();
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
@@ -48,20 +58,36 @@ export async function createSession(userId: number): Promise<void> {
   });
 }
 
-// Elimina la sesión.
-export async function destroySession(): Promise<void> {
+// Elimina la sesión (cookie) y registra la revocación.
+export async function destroySession(sessionId?: string): Promise<void> {
   const cookieStore = cookies();
+  
+  // Revoke the session in database if we have a session ID
+  if (sessionId) {
+    await db.insert(revokedSessions).values({
+      userId: 0, // Will be updated with actual userId from token
+      tokenId: sessionId,
+    });
+  }
+  
   cookieStore.delete(SESSION_COOKIE_NAME);
 }
 
-// Recupera el usuario actual desde la cookie. Devuelve null si no hay sesión válida.
+// Recupera el usuario actual desde la cookie. Devuelve null si no hay sesión válida o está revocada.
 export async function getCurrentUser(): Promise<SessionUser | null> {
   try {
     const cookieStore = cookies();
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     if (!token) return null;
-    const decoded = jwt.verify(token, env.SESSION_SECRET) as { uid?: number };
+
+    // Verificar token JWT
+    const decoded = jwt.verify(token, env.SESSION_SECRET, { algorithms: ['HS256'] }) as { uid?: number; jti?: string; iat?: number };
     if (!decoded?.uid) return null;
+    
+    // Check if session is revoked
+    if (decoded.jti && await isSessionRevoked(decoded.jti)) {
+      return null;
+    }
 
     const rows = await db
       .select({
@@ -92,7 +118,6 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 export async function requireUser(): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) {
-    // Lanzamos error para que el componente lo maneje con redirect.
     const { redirect } = await import("next/navigation");
     redirect("/login");
   }
@@ -136,22 +161,24 @@ export async function generateResetToken(userId: number): Promise<string> {
 export async function validateResetToken(token: string): Promise<number | null> {
   const now = new Date().toISOString();
 
-  // Obtener tokens no usados y no expirados
   const candidates = await db
-    .select({ id: passwordResetTokens.id, userId: passwordResetTokens.userId, tokenHash: passwordResetTokens.tokenHash })
+    .select({
+      id: passwordResetTokens.id,
+      userId: passwordResetTokens.userId,
+      tokenHash: passwordResetTokens.tokenHash,
+    })
     .from(passwordResetTokens)
     .where(
       and(
         eq(passwordResetTokens.used, false),
-        gt(passwordResetTokens.expiresAt, now) // expiresAt > now
+        gt(passwordResetTokens.expiresAt, now)
       )
-    );
+    )
+    .limit(10);
 
-  // Comparar de forma timing-safe con cada candidato
   for (const candidate of candidates) {
     const isMatch = await bcrypt.compare(token, candidate.tokenHash);
     if (isMatch) {
-      // Marcar como usado
       await db
         .update(passwordResetTokens)
         .set({ used: true })

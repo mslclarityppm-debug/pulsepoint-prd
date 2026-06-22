@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { contents } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
+import { validateCSRFToken } from "@/lib/csrf";
 import { contenidoSchema } from "@/lib/validaciones";
 
 export type ContenidoState = {
@@ -18,6 +19,10 @@ export async function accionCrearContenido(
   formData: FormData,
 ): Promise<ContenidoState> {
   await requireAdmin();
+  const csrfToken = formData.get('csrf') as string;
+  if (!(await validateCSRFToken(csrfToken))) {
+    return { error: "Token CSRF inválido" };
+  }
   const parsed = contenidoSchema.safeParse({
     tipo: formData.get("tipo"),
     titulo: formData.get("titulo"),

@@ -1,9 +1,12 @@
 // Cumplimentar un cuestionario específico.
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+
 import { db } from "@/db";
 import { questionnaires } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
+import { getCSRFToken } from "@/lib/csrf";
+
 import { CompletarCuestionario } from "./completar-cuestionario";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +23,7 @@ export default async function CuestionarioPage({
   params: { id: string };
 }) {
   await requireUser();
+  const csrfToken = await getCSRFToken();
   const id = Number(params?.id);
   if (!Number.isFinite(id)) notFound();
   const rows = await db
@@ -45,10 +49,11 @@ export default async function CuestionarioPage({
         </h1>
         <p className="text-muted-foreground mt-1">{q.descripcion}</p>
       </div>
-      <CompletarCuestionario
-        questionnaireId={q.id}
-        preguntas={preguntas}
-      />
+    <CompletarCuestionario
+      questionnaireId={q.id}
+      preguntas={preguntas}
+      csrfToken={csrfToken}
+    />
     </div>
   );
 }

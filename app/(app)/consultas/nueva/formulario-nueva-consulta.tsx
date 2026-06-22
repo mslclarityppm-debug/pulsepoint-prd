@@ -1,14 +1,15 @@
 "use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { toast } from "sonner";
+
 import {
   accionCrearConsulta,
   type ConsultaState,
 } from "@/actions/consultas";
-import { useAccion, usePending } from "@/lib/use-accion";
 import { FormAccion } from "@/components/ui-app/form-accion";
+import { useAccion, usePending } from "@/lib/use-accion";
 
 function Boton() {
   const pending = usePending();
@@ -24,7 +25,7 @@ function Boton() {
   );
 }
 
-export function FormularioNuevaConsulta() {
+export function FormularioNuevaConsulta({ csrfToken }: { csrfToken: string }) {
   const [estado, ejecutar, pending] = useAccion<ConsultaState>(
     accionCrearConsulta as never,
     {},
@@ -41,6 +42,7 @@ export function FormularioNuevaConsulta() {
 
   return (
     <FormAccion ejecutar={ejecutar} pending={pending} className="space-y-4">
+      <input type="hidden" name="csrf" value={csrfToken} />
       <div>
         <label htmlFor="asunto" className="block text-sm font-medium mb-1">
           Asunto
@@ -49,10 +51,10 @@ export function FormularioNuevaConsulta() {
           id="asunto"
           name="asunto"
           required
-          className={`input-base ${e?.asunto ? "input-error" : ""}`}
+          className={`input-base ${e?.['asunto'] ? "input-error" : ""}`}
         />
-        {e?.asunto && (
-          <p className="mt-1 text-xs text-destructive">{e.asunto}</p>
+        {e?.['asunto'] && (
+          <p className="mt-1 text-xs text-destructive">{e['asunto']}</p>
         )}
       </div>
       <div>
@@ -64,10 +66,10 @@ export function FormularioNuevaConsulta() {
           name="mensaje"
           rows={5}
           required
-          className={`input-base ${e?.mensaje ? "input-error" : ""}`}
+          className={`input-base ${e?.['mensaje'] ? "input-error" : ""}`}
         />
-        {e?.mensaje && (
-          <p className="mt-1 text-xs text-destructive">{e.mensaje}</p>
+        {e?.['mensaje'] && (
+          <p className="mt-1 text-xs text-destructive">{e['mensaje']}</p>
         )}
       </div>
       {estado?.error && !estado?.errores && (

@@ -1,9 +1,11 @@
 // Layout raíz: providers de tema, fuentes y notificaciones.
 import { DM_Sans, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
+
+import { ChunkLoadErrorHandler } from "@/components/chunk-load-error-handler";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { ChunkLoadErrorHandler } from "@/components/chunk-load-error-handler";
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans" });
 const jakartaSans = Plus_Jakarta_Sans({
@@ -29,7 +31,12 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        <script src="https://apps.abacus.ai/chatllm/appllm-lib.js"></script>
+        <Script
+          src="https://apps.abacus.ai/chatllm/appllm-lib.js"
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+          integrity="sha384-s2tDkPG+oxcfMQ2tb+yX9o4VIHjsQC9BtoT4/MBEyjfcXvCPWLCVRKJdHeK8DKHu"
+        />
       </head>
       <body
         className={`${dmSans.variable} ${jakartaSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}

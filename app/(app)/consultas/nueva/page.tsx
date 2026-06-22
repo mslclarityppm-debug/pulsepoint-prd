@@ -1,11 +1,14 @@
 // Crear nueva consulta.
 import { requireUser } from "@/lib/auth";
+import { getCSRFToken } from "@/lib/csrf";
+
 import { FormularioNuevaConsulta } from "./formulario-nueva-consulta";
 
 export const dynamic = "force-dynamic";
 
 export default async function NuevaConsultaPage() {
   await requireUser();
+  const csrfToken = await getCSRFToken();
   return (
     <div className="max-w-xl mx-auto space-y-4">
       <div>
@@ -18,7 +21,7 @@ export default async function NuevaConsultaPage() {
         </p>
       </div>
       <div className="rounded-lg border bg-card p-5 shadow-sm">
-        <FormularioNuevaConsulta />
+        <FormularioNuevaConsulta csrfToken={csrfToken} />
       </div>
     </div>
   );

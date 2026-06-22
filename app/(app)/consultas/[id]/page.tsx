@@ -1,10 +1,13 @@
 // Detalle de un hilo de consulta: muestra mensajes y permite responder.
 import { asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+
 import { db } from "@/db";
 import { consultationMessages, consultations } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
+import { getCSRFToken } from "@/lib/csrf";
 import { formatearFechaHora } from "@/lib/formato";
+
 import { FormularioMensaje } from "./formulario-mensaje";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +18,7 @@ export default async function ConsultaDetallePage({
   params: { id: string };
 }) {
   const user = await requireUser();
+  const csrfToken = await getCSRFToken();
   const id = Number(params?.id);
   if (!Number.isFinite(id)) notFound();
 
@@ -83,7 +87,7 @@ export default async function ConsultaDetallePage({
 
       {cons.estado !== "cerrada" && (
         <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <FormularioMensaje consultationId={cons.id} />
+          <FormularioMensaje consultationId={cons.id} csrfToken={csrfToken} />
         </div>
       )}
       {cons.estado === "cerrada" && (

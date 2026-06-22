@@ -1,8 +1,9 @@
 "use client";
 import { Loader2 } from "lucide-react";
+
 import { accionLogin, type ActionState } from "@/actions/auth";
-import { useAccion, usePending } from "@/lib/use-accion";
 import { FormAccion } from "@/components/ui-app/form-accion";
+import { useAccion, usePending } from "@/lib/use-accion";
 
 function Boton() {
   const pending = usePending();
@@ -23,42 +24,42 @@ export function FormularioLogin({ csrfToken }: { csrfToken: string }) {
     accionLogin as never,
     {},
   );
-  const errores = estado?.errores ?? {};
-  return (
-    <FormAccion ejecutar={ejecutar} pending={pending} className="mt-6 space-y-4">
-      <input type="hidden" name="csrf" value={csrfToken} />
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium mb-1">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          className={`input-base ${errores?.email ? "input-error" : ""}`}
-        />
-        {errores?.email && (
-          <p className="mt-1 text-xs text-destructive">{errores.email}</p>
-        )}
-      </div>
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium mb-1">
-          Contraseña
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          className={`input-base ${errores?.password ? "input-error" : ""}`}
-        />
-        {errores?.password && (
-          <p className="mt-1 text-xs text-destructive">{errores.password}</p>
-        )}
-      </div>
+   const errores = estado?.errores ?? {};
+   return (
+     <FormAccion ejecutar={ejecutar} pending={pending} className="mt-6 space-y-4">
+       <input type="hidden" name="csrf" value={csrfToken} />
+       <div>
+         <label htmlFor="email" className="block text-sm font-medium mb-1">
+           Email
+         </label>
+         <input
+           id="email"
+           name="email"
+           type="email"
+           autoComplete="email"
+           required
+           className={`input-base ${errores?.['email'] ? "input-error" : ""}`}
+         />
+         {errores?.['email'] && (
+           <p className="mt-1 text-xs text-destructive">{errores['email']}</p>
+         )}
+       </div>
+       <div>
+         <label htmlFor="password" className="block text-sm font-medium mb-1">
+           Contraseña
+         </label>
+         <input
+           id="password"
+           name="password"
+           type="password"
+           autoComplete="current-password"
+           required
+           className={`input-base ${errores?.['password'] ? "input-error" : ""}`}
+         />
+         {errores?.['password'] && (
+           <p className="mt-1 text-xs text-destructive">{errores['password']}</p>
+         )}
+       </div>
       {estado?.error && !estado?.errores && (
         <p
           role="alert"

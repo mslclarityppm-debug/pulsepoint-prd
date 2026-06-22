@@ -1,13 +1,14 @@
 // Server Actions para consultas (tickets) y mensajes.
 "use server";
 import { revalidatePath } from "next/cache";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   consultationMessages,
   consultations,
 } from "@/db/schema";
 import { requireUser, requireAdmin } from "@/lib/auth";
+import { validateCSRFToken } from "@/lib/csrf";
 import {
   consultaMensajeSchema,
   consultaNuevaSchema,
@@ -25,6 +26,10 @@ export async function accionCrearConsulta(
   formData: FormData,
 ): Promise<ConsultaState> {
   const user = await requireUser();
+  const csrfToken = formData.get('csrf') as string;
+  if (!(await validateCSRFToken(csrfToken))) {
+    return { error: "Token CSRF inválido" };
+  }
   const parsed = consultaNuevaSchema.safeParse({
     asunto: formData.get("asunto"),
     mensaje: formData.get("mensaje"),
@@ -70,6 +75,10 @@ export async function accionResponderConsulta(
   formData: FormData,
 ): Promise<ConsultaState> {
   const user = await requireUser();
+  const csrfToken = formData.get('csrf') as string;
+  if (!(await validateCSRFToken(csrfToken))) {
+    return { error: "Token CSRF inválido" };
+  }
   const parsed = consultaMensajeSchema.safeParse({
     consultationId: formData.get("consultationId"),
     mensaje: formData.get("mensaje"),
@@ -121,8 +130,7 @@ export async function accionResponderConsulta(
 }
 
 export async function accionCerrarConsulta(id: number): Promise<void> {
-  const user = await requireAdmin();
-  void user;
+  await requireAdmin();
   await db
     .update(consultations)
     .set({ estado: "cerrada", updatedAt: sql`CURRENT_TIMESTAMP` })

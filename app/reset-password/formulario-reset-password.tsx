@@ -1,8 +1,9 @@
 "use client";
 import { Loader2 } from "lucide-react";
+
 import { accionResetPassword, type ActionState } from "@/actions/auth";
-import { useAccion, usePending } from "@/lib/use-accion";
 import { FormAccion } from "@/components/ui-app/form-accion";
+import { useAccion, usePending } from "@/lib/use-accion";
 
 function Boton() {
   const pending = usePending();
@@ -43,10 +44,10 @@ export function FormularioResetPassword({ csrfToken, token }: FormularioResetPas
           type="password"
           autoComplete="new-password"
           required
-          className={`input-base ${errores?.password ? "input-error" : ""}`}
+          className={`input-base ${errores?.['password'] ? "input-error" : ""}`}
         />
-        {errores?.password && (
-          <p className="mt-1 text-xs text-destructive">{errores.password}</p>
+        {errores?.['password'] && (
+          <p className="mt-1 text-xs text-destructive">{errores['password']}</p>
         )}
       </div>
       <div>
@@ -59,10 +60,10 @@ export function FormularioResetPassword({ csrfToken, token }: FormularioResetPas
           type="password"
           autoComplete="new-password"
           required
-          className={`input-base ${errores?.confirmar ? "input-error" : ""}`}
+          className={`input-base ${errores?.['confirmar'] ? "input-error" : ""}`}
         />
-        {errores?.confirmar && (
-          <p className="mt-1 text-xs text-destructive">{errores.confirmar}</p>
+        {errores?.['confirmar'] && (
+          <p className="mt-1 text-xs text-destructive">{errores['confirmar']}</p>
         )}
       </div>
       {estado?.error && !estado?.errores && (

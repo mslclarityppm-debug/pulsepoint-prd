@@ -1,7 +1,5 @@
 // Landing pública: muestra la propuesta de valor y CTAs login/registro.
 // Si el usuario ya está logueado, redirige a su panel.
-import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
   Activity,
   BookOpen,
@@ -10,8 +8,11 @@ import {
   MessageCircle,
   ShieldCheck,
 } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+
 import { ToggleTema } from "@/components/ui-app/toggle-tema";
+import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -38,24 +39,24 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-30 backdrop-blur bg-background/80 border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
 <Link href="/" className="flex items-center gap-2 font-display font-semibold">
-             <HeartPulse className="h-6 w-6 text-primary" />
-             <span>Pulse Point</span>
-           </Link>
-          <div className="flex items-center gap-2">
-            <ToggleTema />
-            <Link
-              href="/login"
-              className="px-3 py-2 text-sm font-medium hover:text-primary"
-            >
-              Iniciar sesión
+              <HeartPulse className="h-6 w-6 text-primary" />
+              <span>Pulse Point</span>
             </Link>
-            <Link
-              href="/registro"
-              className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
-            >
-              Crear cuenta
-            </Link>
-          </div>
+           <div className="flex items-center gap-2">
+             <ToggleTema />
+             <Link
+               href="/login"
+               className="px-3 py-2 text-sm font-medium hover:text-primary"
+             >
+               Iniciar sesión
+             </Link>
+             <Link
+               href="/registro"
+               className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
+             >
+               Crear cuenta
+             </Link>
+           </div>
         </div>
       </header>
 

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { users, userProfiles } from "@/db/schema";
+import { users, userProfiles, passwordHistory } from "@/db/schema";
 import {
   createSession,
   destroySession,
@@ -16,7 +16,7 @@ import {
   cleanupExpiredTokens,
 } from "@/lib/auth";
 import { loginSchema, registroSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validaciones";
-import { checkRateLimit, resetRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, checkRegistrationRateLimit, resetRateLimit } from "@/lib/rate-limit";
 import { validateCSRFToken } from "@/lib/csrf";
 import { sendPasswordResetEmail } from "@/lib/email";
 
@@ -30,10 +30,22 @@ export async function accionRegistro(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  // Validate CSRF token
   const csrfToken = formData.get('csrf') as string;
   if (!(await validateCSRFToken(csrfToken))) {
     return { error: "Token CSRF inválido" };
+  }
+
+  const headersList = headers();
+  const forwardedFor = headersList.get('x-forwarded-for');
+  const realIp = headersList.get('x-real-ip');
+  const clientIp = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
+
+  const rateLimitResult = await checkRegistrationRateLimit(clientIp);
+  if (!rateLimitResult.allowed) {
+    const resetInMinutes = Math.ceil((rateLimitResult.resetTime - Date.now()) / (60 * 1000));
+    return {
+      error: `Demasiados intentos de registro. Inténtalo de nuevo en ${resetInMinutes} minutos.`
+    };
   }
 
   const parsed = registroSchema.safeParse({
@@ -261,8 +273,39 @@ export async function accionResetPassword(
     return { error: "Token inválido o expirado" };
   }
 
+  // Get current password hash to check history
+  const currentRows = await db
+    .select({ passwordHash: users.passwordHash })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const currentHash = currentRows?.[0]?.passwordHash;
+
+  // Check password history (last 5 passwords)
+  const historyRows = await db
+    .select({ passwordHash: passwordHistory.passwordHash })
+    .from(passwordHistory)
+    .where(eq(passwordHistory.userId, userId))
+    .orderBy(passwordHistory.createdAt)
+    .limit(5);
+
+  for (const historyEntry of historyRows) {
+    if (await verifyPassword(password, historyEntry.passwordHash)) {
+      return { error: "No puedes reutilizar contraseñas anteriores" };
+    }
+  }
+
   // Update password
   const passwordHash = await hashPassword(password);
+  
+  // Store old password in history
+  if (currentHash) {
+    await db.insert(passwordHistory).values({
+      userId,
+      passwordHash: currentHash,
+    });
+  }
+  
   await db
     .update(users)
     .set({ passwordHash })

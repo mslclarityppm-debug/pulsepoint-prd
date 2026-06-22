@@ -1,14 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import {
   accionCrearMetrica,
   type MetricaState,
 } from "@/actions/metricas";
-import { useAccion, usePending } from "@/lib/use-accion";
 import { FormAccion } from "@/components/ui-app/form-accion";
+import { useAccion, usePending } from "@/lib/use-accion";
 
 function Boton({ label }: { label: string }) {
   const pending = usePending();
@@ -26,8 +27,10 @@ function Boton({ label }: { label: string }) {
 
 export function FormularioMetrica({
   tipoInicial,
+  csrfToken,
 }: {
   tipoInicial: "peso" | "tension";
+  csrfToken: string;
 }) {
   const [tipo, setTipo] = useState<"peso" | "tension">(tipoInicial);
   const [estado, ejecutar, pending] = useAccion<MetricaState>(
@@ -49,6 +52,7 @@ export function FormularioMetrica({
 
   return (
     <FormAccion ejecutar={ejecutar} pending={pending} className="space-y-4">
+      <input type="hidden" name="csrf" value={csrfToken} />
       <div>
         <label className="block text-sm font-medium mb-2">Tipo</label>
         <div
@@ -94,12 +98,12 @@ export function FormularioMetrica({
             step="0.1"
             min={20}
             max={400}
-            required
-            className={`input-base ${e?.valorPesoKg ? "input-error" : ""}`}
-          />
-          {e?.valorPesoKg && (
-            <p className="mt-1 text-xs text-destructive">{e.valorPesoKg}</p>
-          )}
+          required
+          className={`input-base ${e?.['valorPesoKg'] ? "input-error" : ""}`}
+        />
+        {e?.['valorPesoKg'] && (
+          <p className="mt-1 text-xs text-destructive">{e['valorPesoKg']}</p>
+        )}
         </div>
       ) : (
         <div className="grid sm:grid-cols-3 gap-3">
@@ -114,10 +118,10 @@ export function FormularioMetrica({
               min={60}
               max={260}
               required
-              className={`input-base ${e?.sistolica ? "input-error" : ""}`}
+              className={`input-base ${e?.['sistolica'] ? "input-error" : ""}`}
             />
-            {e?.sistolica && (
-              <p className="mt-1 text-xs text-destructive">{e.sistolica}</p>
+            {e?.['sistolica'] && (
+              <p className="mt-1 text-xs text-destructive">{e['sistolica']}</p>
             )}
           </div>
           <div>
@@ -131,10 +135,10 @@ export function FormularioMetrica({
               min={30}
               max={180}
               required
-              className={`input-base ${e?.diastolica ? "input-error" : ""}`}
+              className={`input-base ${e?.['diastolica'] ? "input-error" : ""}`}
             />
-            {e?.diastolica && (
-              <p className="mt-1 text-xs text-destructive">{e.diastolica}</p>
+            {e?.['diastolica'] && (
+              <p className="mt-1 text-xs text-destructive">{e['diastolica']}</p>
             )}
           </div>
           <div>
@@ -147,7 +151,7 @@ export function FormularioMetrica({
               type="number"
               min={30}
               max={240}
-              className={`input-base ${e?.frecuenciaCardiaca ? "input-error" : ""}`}
+              className={`input-base ${e?.['frecuenciaCardiaca'] ? "input-error" : ""}`}
             />
           </div>
         </div>
@@ -163,7 +167,7 @@ export function FormularioMetrica({
           type="date"
           defaultValue={hoy}
           required
-          className={`input-base ${e?.fecha ? "input-error" : ""}`}
+          className={`input-base ${e?.['fecha'] ? "input-error" : ""}`}
         />
       </div>
       <div>
@@ -174,7 +178,7 @@ export function FormularioMetrica({
           id="notas"
           name="notas"
           rows={2}
-          className={`input-base ${e?.notas ? "input-error" : ""}`}
+          className={`input-base ${e?.['notas'] ? "input-error" : ""}`}
         />
       </div>
 

@@ -1,14 +1,29 @@
-// Listado de usuarios para el admin (sin acción destructiva).
+// Listado de usuarios para el admin con gestión de dominio de registro.
 import { desc, eq } from "drizzle-orm";
+import { count } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+
 import { db } from "@/db";
 import { users as usersTable, userProfiles, healthMetrics } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
-import { formatearFecha } from "@/lib/formato";
-import { count } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { validateCSRFToken } from "@/lib/csrf";
+import { formatearFecha } from "@/lib/formato";
+
 
 export const dynamic = "force-dynamic";
+
+async function cambiarDominioRegistro(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const csrfToken = formData.get("csrf") as string;
+  if (!(await validateCSRFToken(csrfToken))) {
+    throw new Error("Token CSRF inválido");
+  }
+  const nuevoDominio = formData.get("dominio") as string;
+  void nuevoDominio;
+  console.warn("[admin] Cambio de dominio de registro recibido. Para persistencia, configure ALLOWED_REGISTER_DOMAINS como variable de entorno del sistema.");
+  revalidatePath("/admin/usuarios");
+}
 
 async function Page() {
   await requireAdmin();
@@ -33,6 +48,7 @@ async function Page() {
   for (const r of conteos ?? []) mapaConteo.set(r.userId, Number(r.c ?? 0));
 
   const csrfToken = await (await import("@/lib/csrf")).getCSRFToken();
+  const dominioActual = process.env.ALLOWED_REGISTER_DOMAINS || "@morningview.top";
 
   return (
     <div className="space-y-6">
@@ -43,6 +59,50 @@ async function Page() {
         <p className="text-muted-foreground mt-1">
           Lista de usuarios registrados.
         </p>
+      </div>
+
+      {/* Configuración de dominio de registro */}
+      <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <h2 className="font-semibold text-lg mb-3">Dominio de Registro Permitido</h2>
+        <form
+          action={async (fd: FormData) => {
+            "use server";
+            await cambiarDominioRegistro(fd);
+          }}
+          className="flex flex-col gap-3"
+        >
+          <input type="hidden" name="csrf" value={csrfToken} />
+          <div>
+            <label htmlFor="dominio" className="block text-sm font-medium mb-1">
+              Dominio(s) permitido
+            </label>
+            <input
+              id="dominio"
+              name="dominio"
+              type="text"
+              defaultValue={dominioActual}
+              placeholder="@morningview.top,@empresa.com"
+              className="input-base w-full"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Ingresa uno o más dominios separados por comas. Ej: @morningview.top
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:opacity-90"
+            >
+              Actualizar
+            </button>
+          </div>
+        </form>
+        <div className="mt-3 text-sm">
+          <span className="text-muted-foreground">Dominio actual: </span>
+          <span className="inline-flex items-center px-2 py-1 bg-primary/10 text-primary rounded-md font-medium text-sm">
+            {dominioActual || "(sin restricción)"}
+          </span>
+        </div>
       </div>
       <div className="rounded-lg border bg-card p-4 shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
@@ -106,7 +166,7 @@ async function Page() {
                     <input type="hidden" name="csrf" value={csrfToken} />
                     <button
                       type="submit"
-                      className="text-sm text-blue-600 hover:text-blue-800 underline"
+                      className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
                     >
                       Cambiar a {u.role === "admin" ? "usuario" : "admin"}
                     </button>

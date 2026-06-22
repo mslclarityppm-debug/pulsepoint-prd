@@ -1,9 +1,11 @@
 // Página para solicitar reseteo de contraseña.
+import { HeartPulse } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { HeartPulse } from "lucide-react";
+
 import { getCurrentUser } from "@/lib/auth";
 import { getCSRFToken } from "@/lib/csrf";
+
 import { FormularioForgotPassword } from "./formulario-forgot-password";
 
 export const dynamic = "force-dynamic";

@@ -1,5 +1,6 @@
-// In-memory rate limiting for authentication attempts
-// Resets on server restart - suitable for small applications
+// In-memory rate limiting for authentication attempts.
+// Uses a Map with periodic cleanup. For multi-instance deployments,
+// replace with Redis or a shared store.
 
 interface RateLimitEntry {
   count: number;
@@ -8,10 +9,20 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const DEFAULT_MAX_ATTEMPTS = 5;
+const DEFAULT_WINDOW_MS = 15 * 60 * 1000;
 
-export async function checkRateLimit(identifier: string): Promise<{
+const REGISTRATION_MAX_ATTEMPTS = 3;
+const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
+
+const API_MAX_ATTEMPTS = 60;
+const API_WINDOW_MS = 60 * 1000;
+
+export async function checkRateLimit(
+  identifier: string,
+  maxAttempts: number = DEFAULT_MAX_ATTEMPTS,
+  windowMs: number = DEFAULT_WINDOW_MS,
+): Promise<{
   allowed: boolean;
   remainingAttempts: number;
   resetTime: number;
@@ -20,17 +31,16 @@ export async function checkRateLimit(identifier: string): Promise<{
   const entry = rateLimitStore.get(identifier);
 
   if (!entry || now > entry.resetTime) {
-    // First attempt or window expired
-    const resetTime = now + WINDOW_MS;
+    const resetTime = now + windowMs;
     rateLimitStore.set(identifier, { count: 1, resetTime });
     return {
       allowed: true,
-      remainingAttempts: MAX_ATTEMPTS - 1,
+      remainingAttempts: maxAttempts - 1,
       resetTime,
     };
   }
 
-  if (entry.count >= MAX_ATTEMPTS) {
+  if (entry.count >= maxAttempts) {
     return {
       allowed: false,
       remainingAttempts: 0,
@@ -38,22 +48,28 @@ export async function checkRateLimit(identifier: string): Promise<{
     };
   }
 
-  // Increment count
   entry.count += 1;
   rateLimitStore.set(identifier, entry);
 
   return {
     allowed: true,
-    remainingAttempts: MAX_ATTEMPTS - entry.count,
+    remainingAttempts: maxAttempts - entry.count,
     resetTime: entry.resetTime,
   };
+}
+
+export async function checkRegistrationRateLimit(identifier: string) {
+  return checkRateLimit(identifier, REGISTRATION_MAX_ATTEMPTS, REGISTRATION_WINDOW_MS);
+}
+
+export async function checkApiRateLimit(identifier: string) {
+  return checkRateLimit(identifier, API_MAX_ATTEMPTS, API_WINDOW_MS);
 }
 
 export async function resetRateLimit(identifier: string): Promise<void> {
   rateLimitStore.delete(identifier);
 }
 
-// Clean up expired entries periodically (optional, for memory management)
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of rateLimitStore.entries()) {
@@ -61,4 +77,4 @@ setInterval(() => {
       rateLimitStore.delete(key);
     }
   }
-}, 60 * 1000); // Clean up every minute
+}, 60 * 1000);

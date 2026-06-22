@@ -1,7 +1,8 @@
 // Listado de consultas del usuario.
-import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { MessageCircle, Plus } from "lucide-react";
+import Link from "next/link";
+
 import { db } from "@/db";
 import { consultations } from "@/db/schema";
 import { requireUser } from "@/lib/auth";

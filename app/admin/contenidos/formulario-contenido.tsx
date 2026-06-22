@@ -1,13 +1,14 @@
 "use client";
-import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+
 import {
   accionCrearContenido,
   type ContenidoState,
 } from "@/actions/contenidos";
-import { useAccion, usePending } from "@/lib/use-accion";
 import { FormAccion } from "@/components/ui-app/form-accion";
+import { useAccion, usePending } from "@/lib/use-accion";
 
 function Boton() {
   const pending = usePending();
@@ -23,7 +24,7 @@ function Boton() {
   );
 }
 
-export function FormularioContenido() {
+export function FormularioContenido({ csrfToken }: { csrfToken: string }) {
   const [estado, ejecutar, pending] = useAccion<ContenidoState>(
     accionCrearContenido as never,
     {},
@@ -45,12 +46,13 @@ export function FormularioContenido() {
       formRef={ref}
       className="space-y-3"
     >
+      <input type="hidden" name="csrf" value={csrfToken} />
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label htmlFor="tipo" className="block text-sm font-medium mb-1">
             Tipo
           </label>
-          <select id="tipo" name="tipo" required className={`input-base ${e?.tipo ? "input-error" : ""}`}>
+          <select id="tipo" name="tipo" required className={`input-base ${e?.['tipo'] ? "input-error" : ""}`}>
             <option value="video">Vídeo</option>
             <option value="infografia">Infografía</option>
             <option value="articulo">Artículo</option>
@@ -77,15 +79,15 @@ export function FormularioContenido() {
         <label htmlFor="titulo" className="block text-sm font-medium mb-1">
           Título
         </label>
-        <input id="titulo" name="titulo" required className={`input-base ${e?.titulo ? "input-error" : ""}`} />
-        {e?.titulo && <p className="mt-1 text-xs text-destructive">{e.titulo}</p>}
+        <input id="titulo" name="titulo" required className={`input-base ${e?.['titulo'] ? "input-error" : ""}`} />
+        {e?.['titulo'] && <p className="mt-1 text-xs text-destructive">{e['titulo']}</p>}
       </div>
       <div>
         <label htmlFor="url" className="block text-sm font-medium mb-1">
           URL
         </label>
-        <input id="url" name="url" type="url" required className={`input-base ${e?.url ? "input-error" : ""}`} />
-        {e?.url && <p className="mt-1 text-xs text-destructive">{e.url}</p>}
+        <input id="url" name="url" type="url" required className={`input-base ${e?.['url'] ? "input-error" : ""}`} />
+        {e?.['url'] && <p className="mt-1 text-xs text-destructive">{e['url']}</p>}
       </div>
       <div>
         <label htmlFor="descripcion" className="block text-sm font-medium mb-1">

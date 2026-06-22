@@ -1,5 +1,4 @@
 // Layout interior con navegación principal para zona autenticada.
-import Link from "next/link";
 import {
   Activity,
   BookOpen,
@@ -10,10 +9,13 @@ import {
   MessageCircle,
   Settings,
 } from "lucide-react";
-import { ToggleTema } from "./toggle-tema";
-import type { SessionUser } from "@/lib/auth";
+import Link from "next/link";
+
 import { accionLogout } from "@/actions/auth";
+import type { SessionUser } from "@/lib/auth";
+
 import { NavLink } from "./nav-link";
+import { ToggleTema } from "./toggle-tema";
 
 export function Shell({
   user,
@@ -115,7 +117,7 @@ export function Shell({
       <footer className="border-t bg-background">
         <div className="mx-auto max-w-6xl px-4 py-4 text-xs text-muted-foreground flex items-center justify-between">
           <span>© {new Date().getFullYear()} Pulse Point</span>
-          <span>Datos privados — Cumplimiento RGPD</span>
+          <span>Powered by Morning View Digital • Hosted by Proe</span>
         </div>
       </footer>
     </div>

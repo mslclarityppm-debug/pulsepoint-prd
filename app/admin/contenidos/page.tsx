@@ -1,19 +1,23 @@
 // CMS de contenidos: listar + crear + activar/desactivar + eliminar.
 import { asc } from "drizzle-orm";
 import { Trash2 } from "lucide-react";
-import { db } from "@/db";
-import { contents } from "@/db/schema";
-import { requireAdmin } from "@/lib/auth";
+
 import {
   accionEliminarContenido,
   accionToggleContenido,
 } from "@/actions/contenidos";
+import { db } from "@/db";
+import { contents } from "@/db/schema";
+import { requireAdmin } from "@/lib/auth";
+import { getCSRFToken, validateCSRFToken } from "@/lib/csrf";
+
 import { FormularioContenido } from "./formulario-contenido";
 
 export const dynamic = "force-dynamic";
 
 export default async function ContenidosAdminPage() {
   await requireAdmin();
+  const csrfToken = await getCSRFToken();
   const items = await db.select().from(contents).orderBy(asc(contents.orden));
 
   return (
@@ -32,7 +36,7 @@ export default async function ContenidosAdminPage() {
           <h2 className="font-display text-lg font-semibold mb-3">
             Nuevo contenido
           </h2>
-          <FormularioContenido />
+          <FormularioContenido csrfToken={csrfToken} />
         </section>
 
         <section className="rounded-lg border bg-card p-5 shadow-sm">
@@ -58,11 +62,16 @@ export default async function ContenidosAdminPage() {
                   </a>
                 </div>
                 <form
-                  action={async () => {
+                  action={async (fd: FormData) => {
                     "use server";
+                    const token = fd.get("csrf") as string;
+                    if (!(await validateCSRFToken(token))) {
+                      throw new Error("Token CSRF inválido");
+                    }
                     await accionToggleContenido(c.id, !c.activo);
                   }}
                 >
+                  <input type="hidden" name="csrf" value={csrfToken} />
                   <button
                     type="submit"
                     className={`text-xs px-2 py-1 rounded-md border ${
@@ -76,11 +85,16 @@ export default async function ContenidosAdminPage() {
                   </button>
                 </form>
                 <form
-                  action={async () => {
+                  action={async (fd: FormData) => {
                     "use server";
+                    const token = fd.get("csrf") as string;
+                    if (!(await validateCSRFToken(token))) {
+                      throw new Error("Token CSRF inválido");
+                    }
                     await accionEliminarContenido(c.id);
                   }}
                 >
+                  <input type="hidden" name="csrf" value={csrfToken} />
                   <button
                     type="submit"
                     aria-label="Eliminar"

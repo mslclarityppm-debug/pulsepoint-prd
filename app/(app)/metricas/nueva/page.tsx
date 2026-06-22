@@ -1,6 +1,9 @@
 // Página para registrar una nueva métrica (peso o tensión).
-import { FormularioMetrica } from "./formulario-metrica";
 import { requireUser } from "@/lib/auth";
+import { getCSRFToken } from "@/lib/csrf";
+
+import { FormularioMetrica } from "./formulario-metrica";
+
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +13,7 @@ export default async function NuevaMetricaPage({
   searchParams?: { tipo?: string };
 }) {
   await requireUser();
+  const csrfToken = await getCSRFToken();
   const tipoInicial =
     searchParams?.tipo === "tension" ? "tension" : "peso";
   return (
@@ -23,7 +27,7 @@ export default async function NuevaMetricaPage({
         </p>
       </div>
       <div className="rounded-lg border bg-card p-5 shadow-sm">
-        <FormularioMetrica tipoInicial={tipoInicial} />
+        <FormularioMetrica tipoInicial={tipoInicial} csrfToken={csrfToken} />
       </div>
     </div>
   );

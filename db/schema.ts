@@ -10,6 +10,7 @@ export const users = sqliteTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   // 'user' | 'admin'
+  // CHECK constraint no se usa en Drizzle SQLite; se valida a nivel aplicación
   role: text("role").notNull().default("user"),
   createdAt: text("created_at")
     .notNull()
@@ -150,7 +151,73 @@ export const consultationMessages = sqliteTable("consultation_messages", {
     .default(sql`(CURRENT_TIMESTAMP)`),
 });
 
+// --- Logros / Badges ---
+export const achievements = sqliteTable("achievements", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  badgeId: text("badge_id").notNull(), // constancia_7, completitud, etc.
+  unlockedAt: text("unlocked_at")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+  metadata: text("metadata", { mode: "json" }), // contexto como JSON
+});
+
+// --- Streaks (días con actividad) ---
+export const streaks = sqliteTable("streaks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: text("date").notNull(), // yyyy-mm-dd
+  hasMedicalMetric: integer("has_medical_metric", { mode: "boolean" }).notNull().default(false),
+  hasDietLog: integer("has_diet_log", { mode: "boolean" }).notNull().default(false),
+  hasQuestionnaire: integer("has_questionnaire", { mode: "boolean" }).notNull().default(false),
+});
+
+// --- Audit Logs (for PHI access tracking) ---
+export const auditLogs = sqliteTable("audit_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),
+  resourceType: text("resource_type"),
+  resourceId: integer("resource_id"),
+  metadata: text("metadata"),
+  ipAddress: text("ip_address"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+});
+
+// --- Session Revocation (for secure logout) ---
+export const revokedSessions = sqliteTable("revoked_sessions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tokenId: text("token_id").notNull(),
+  revokedAt: text("revoked_at")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+});
+
+// --- Password History (prevent password reuse) ---
+export const passwordHistory = sqliteTable("password_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+});
+
 // --- Tipos derivados ---
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserProfile = typeof userProfiles.$inferSelect;
@@ -161,4 +228,14 @@ export type Content = typeof contents.$inferSelect;
 export type Questionnaire = typeof questionnaires.$inferSelect;
 export type QuestionnaireResponse = typeof questionnaireResponses.$inferSelect;
 export type Consultation = typeof consultations.$inferSelect;
-export type ConsultationMessage = typeof consultationMessages.$inferInsert;
+export type ConsultationMessage = typeof consultationMessages.$inferSelect;
+export type Achievement = typeof achievements.$inferSelect;
+export type NewAchievement = typeof achievements.$inferInsert;
+export type Streak = typeof streaks.$inferSelect;
+export type NewStreak = typeof streaks.$inferInsert;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;
+export type RevokedSession = typeof revokedSessions.$inferSelect;
+export type NewRevokedSession = typeof revokedSessions.$inferInsert;
+export type PasswordHistoryEntry = typeof passwordHistory.$inferSelect;
+export type NewPasswordHistoryEntry = typeof passwordHistory.$inferInsert;

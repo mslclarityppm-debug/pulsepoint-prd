@@ -5,7 +5,9 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { healthMetrics } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
+import { validateCSRFToken } from "@/lib/csrf";
 import { metricaSchema } from "@/lib/validaciones";
+import { recordDailyActivity } from "./achievements";
 
 export type MetricaState = {
   ok?: boolean;
@@ -18,6 +20,10 @@ export async function accionCrearMetrica(
   formData: FormData,
 ): Promise<MetricaState> {
   const user = await requireUser();
+  const csrfToken = formData.get('csrf') as string;
+  if (!(await validateCSRFToken(csrfToken))) {
+    return { error: "Token CSRF inválido" };
+  }
   const tipo = String(formData.get("tipo") ?? "");
 
   const raw = {
@@ -59,6 +65,8 @@ export async function accionCrearMetrica(
         notas: d.notas ?? null,
       });
     }
+    // Registrar actividad para streaks
+    recordDailyActivity(user.id, { hasMedicalMetric: true }).catch(console.error);
     revalidatePath("/panel");
     revalidatePath("/metricas");
     return { ok: true };

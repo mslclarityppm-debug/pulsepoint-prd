@@ -1,31 +1,49 @@
-// Cliente Drizzle singleton (evita múltiples conexiones en hot-reload).
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import fs from "node:fs";
-import path from "node:path";
-import * as schema from "./schema";
+// Cliente Drizzle singleton con Turso/libsql (serverless).
+import dotenv from "dotenv";
+dotenv.config({ path: ".env" });
 
-// Ruta del archivo SQLite (relativa a la raíz del proyecto Next.js).
-const dbPath = path.join(process.cwd(), "data", "los8.db");
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import { users, userProfiles, healthMetrics, contents, questionnaires, questionnaireResponses, consultations, consultationMessages, achievements, streaks, auditLogs, revokedSessions, passwordResetTokens, passwordHistory } from "./schema";
 
-// Garantizar que el directorio exista.
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
-}
+const client = createClient({
+  url: process.env.TURSO_DATABASE_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN!,
+});
 
-const globalForDb = globalThis as unknown as {
-  sqlite?: Database.Database;
-};
+export const db = drizzle(client, {
+  schema: {
+    users,
+    userProfiles,
+    healthMetrics,
+    contents,
+    questionnaires,
+    questionnaireResponses,
+    consultations,
+    consultationMessages,
+    achievements,
+    streaks,
+    auditLogs,
+    revokedSessions,
+    passwordResetTokens,
+    passwordHistory,
+  },
+}) as LibSQLDatabase<{
+  users: typeof users;
+  userProfiles: typeof userProfiles;
+  healthMetrics: typeof healthMetrics;
+  contents: typeof contents;
+  questionnaires: typeof questionnaires;
+  questionnaireResponses: typeof questionnaireResponses;
+  consultations: typeof consultations;
+  consultationMessages: typeof consultationMessages;
+  achievements: typeof achievements;
+  streaks: typeof streaks;
+  auditLogs: typeof auditLogs;
+  revokedSessions: typeof revokedSessions;
+  passwordResetTokens: typeof passwordResetTokens;
+  passwordHistory: typeof passwordHistory;
+}>;
 
-const sqlite = globalForDb.sqlite ?? new Database(dbPath);
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
-
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.sqlite = sqlite;
-}
-
-export const db = drizzle(sqlite, { schema });
-export { schema };
-export { sqlite };
+export { users, userProfiles, healthMetrics, contents, questionnaires, questionnaireResponses, consultations, consultationMessages, achievements, streaks, auditLogs, revokedSessions, passwordResetTokens, passwordHistory };

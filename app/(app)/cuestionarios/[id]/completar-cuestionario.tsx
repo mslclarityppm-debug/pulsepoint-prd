@@ -1,8 +1,9 @@
 "use client";
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
+
 import { accionEnviarCuestionario } from "@/actions/cuestionarios";
 
 type Pregunta = {
@@ -14,9 +15,11 @@ type Pregunta = {
 export function CompletarCuestionario({
   questionnaireId,
   preguntas,
+  csrfToken,
 }: {
   questionnaireId: number;
   preguntas: Pregunta[];
+  csrfToken: string;
 }) {
   const [paso, setPaso] = useState(0);
   const [respuestas, setRespuestas] = useState<Record<string, number>>({});
@@ -35,8 +38,8 @@ export function CompletarCuestionario({
       setPaso(paso + 1);
     } else {
       // Enviar
-      startTransition(async () => {
-        const r = await accionEnviarCuestionario(questionnaireId, next);
+        startTransition(async () => {
+          const r = await accionEnviarCuestionario(questionnaireId, next, csrfToken);
         if (r.ok) {
           setResultado(r.puntuacion ?? 0);
           toast.success("Cuestionario enviado");

@@ -1,7 +1,8 @@
 // Layout para el panel de administración. Requiere rol admin.
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+
 import { Shell } from "@/components/ui-app/shell";
+import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 

@@ -1,8 +1,9 @@
 "use client";
 import { Loader2 } from "lucide-react";
+
 import { accionForgotPassword, type ActionState } from "@/actions/auth";
-import { useAccion, usePending } from "@/lib/use-accion";
 import { FormAccion } from "@/components/ui-app/form-accion";
+import { useAccion, usePending } from "@/lib/use-accion";
 
 function Boton() {
   const pending = usePending();
@@ -37,10 +38,10 @@ export function FormularioForgotPassword({ csrfToken }: { csrfToken: string }) {
           type="email"
           autoComplete="email"
           required
-          className={`input-base ${errores?.email ? "input-error" : ""}`}
+          className={`input-base ${errores?.['email'] ? "input-error" : ""}`}
         />
-        {errores?.email && (
-          <p className="mt-1 text-xs text-destructive">{errores.email}</p>
+        {errores?.['email'] && (
+          <p className="mt-1 text-xs text-destructive">{errores['email']}</p>
         )}
       </div>
       {estado?.error && !estado?.errores && (

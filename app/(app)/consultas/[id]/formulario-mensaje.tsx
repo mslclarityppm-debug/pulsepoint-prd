@@ -1,13 +1,14 @@
 "use client";
-import { useEffect, useRef } from "react";
 import { Loader2, Send } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+
 import {
   accionResponderConsulta,
   type ConsultaState,
 } from "@/actions/consultas";
-import { useAccion, usePending } from "@/lib/use-accion";
 import { FormAccion } from "@/components/ui-app/form-accion";
+import { useAccion, usePending } from "@/lib/use-accion";
 
 function Boton() {
   const pending = usePending();
@@ -29,8 +30,10 @@ function Boton() {
 
 export function FormularioMensaje({
   consultationId,
+  csrfToken,
 }: {
   consultationId: number;
+  csrfToken: string;
 }) {
   const [estado, ejecutar, pending] = useAccion<ConsultaState>(
     accionResponderConsulta as never,
@@ -55,6 +58,7 @@ export function FormularioMensaje({
       className="space-y-3"
     >
       <input type="hidden" name="consultationId" value={consultationId} />
+      <input type="hidden" name="csrf" value={csrfToken} />
       <label htmlFor="mensaje" className="block text-sm font-medium">
         Tu mensaje
       </label>

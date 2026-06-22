@@ -1,11 +1,33 @@
 // Esquemas Zod compartidos para validación de entrada.
 import { z } from "zod";
 
+const getAllowedRegisterDomains = (): string[] => {
+  const domains = process.env.ALLOWED_REGISTER_DOMAINS?.trim();
+  if (!domains) return [];
+  // Parse domains like "@morningview.top,@empresa.com" into array
+  return domains
+    .split(",")
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+};
+
 export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .email("Introduce un email válido");
+  .email("Introduce un email válido")
+  .refine((val: string) => {
+    const allowed = getAllowedRegisterDomains();
+    if (allowed.length === 0) return true;
+    return allowed.some((domain) => val.endsWith(domain));
+  }, {
+    message: (() => {
+      const allowed = getAllowedRegisterDomains();
+      if (allowed.length === 0)
+        return "Introduce un email válido";
+      return `El registro solo está permitido para: ${allowed.join(", ")}`;
+    })() as string,
+  });
 
 export const passwordSchema = z
   .string()
@@ -13,7 +35,10 @@ export const passwordSchema = z
   .regex(/[A-Z]/, "La contraseña debe contener al menos una letra mayúscula")
   .regex(/[a-z]/, "La contraseña debe contener al menos una letra minúscula")
   .regex(/\d/, "La contraseña debe contener al menos un número")
-  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "La contraseña debe contener al menos un carácter especial");
+  .regex(
+    /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+    "La contraseña debe contener al menos un carácter especial"
+  );
 
 export const registroSchema = z
   .object({
@@ -25,12 +50,16 @@ export const registroSchema = z
     fechaNacimiento: z.string().optional(),
     sexo: z.enum(["hombre", "mujer", "otro"]).optional(),
     telefono: z.string().optional(),
-    consentimientoGdpr: z.coerce.boolean().refine((v) => v === true, {
-      message: "Debes aceptar el tratamiento de datos (GDPR)",
-    }),
-    consentimientoSalud: z.coerce.boolean().refine((v) => v === true, {
-      message: "Debes aceptar el consentimiento de datos de salud",
-    }),
+    consentimientoGdpr: z.coerce
+      .boolean()
+      .refine((v) => v === true, {
+        message: "Debes aceptar el tratamiento de datos (GDPR)",
+      }),
+    consentimientoSalud: z.coerce
+      .boolean()
+      .refine((v) => v === true, {
+        message: "Debes aceptar el consentimiento de datos de salud",
+      }),
   })
   .refine((d) => d.password === d.confirmar, {
     message: "Las contraseñas no coinciden",
@@ -59,7 +88,8 @@ export const resetPasswordSchema = z
 
 export const metricaPesoSchema = z.object({
   tipo: z.literal("peso"),
-  valorPesoKg: z.coerce
+  valorPesoKg: z
+    .coerce
     .number()
     .min(20, "Peso demasiado bajo")
     .max(400, "Peso demasiado alto"),
@@ -69,17 +99,20 @@ export const metricaPesoSchema = z.object({
 
 export const metricaTensionSchema = z.object({
   tipo: z.literal("tension"),
-  sistolica: z.coerce
+  sistolica: z
+    .coerce
     .number()
     .int()
     .min(60, "Sistólica demasiado baja")
     .max(260, "Sistólica demasiado alta"),
-  diastolica: z.coerce
+  diastolica: z
+    .coerce
     .number()
     .int()
     .min(30, "Diastólica demasiado baja")
     .max(180, "Diastólica demasiado alta"),
-  frecuenciaCardiaca: z.coerce
+  frecuenciaCardiaca: z
+    .coerce
     .number()
     .int()
     .min(30)

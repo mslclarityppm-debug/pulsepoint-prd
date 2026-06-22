@@ -3,33 +3,49 @@ const nextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
   images: { unoptimized: true },
-  experimental: {
-    serverComponentsExternalPackages: ['better-sqlite3'],
-  },
   async headers() {
+    const isProd = process.env.NODE_ENV === 'production';
+    const allowedOrigins = process.env.ALLOWED_ORIGIN
+      ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
+      : [];
+
     return [
       {
-        // Apply CORS headers to all routes
         source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'X-DNS-Prefetch-Control', value: 'off' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+          ...(isProd
+            ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }]
+            : []),
+        ],
+      },
+      {
+        source: '/data/(.*)',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+          { key: 'Cache-Control', value: 'no-store' },
+        ],
+      },
+      {
+        source: '/api/(.*)',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: process.env.NODE_ENV === 'production'
-              ? process.env.ALLOWED_ORIGIN || 'https://yourdomain.com'
-              : '*',
+            value: allowedOrigins.length > 0
+              ? allowedOrigins.join(', ')
+              : isProd ? '' : 'http://localhost:3000',
           },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: 'Content-Type',
-          },
-          {
-            key: 'Access-Control-Allow-Credentials',
-            value: 'false',
-          },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, PATCH, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With' },
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
+          { key: 'Access-Control-Max-Age', value: '600' },
         ],
       },
     ];

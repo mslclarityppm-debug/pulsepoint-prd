@@ -1,8 +1,8 @@
 "use client";
 // Toggle de modo claro/oscuro con next-themes.
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export function ToggleTema() {
   const { theme, setTheme, resolvedTheme } = useTheme() ?? {};

@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { questionnaireResponses, questionnaires } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
+import { validateCSRFToken } from "@/lib/csrf";
+import { recordDailyActivity } from "./achievements";
 
 type Pregunta = {
   id: number;
@@ -15,8 +17,12 @@ type Pregunta = {
 export async function accionEnviarCuestionario(
   questionnaireId: number,
   respuestas: Record<string, number>,
+  csrfToken?: string,
 ): Promise<{ ok: boolean; puntuacion?: number; error?: string }> {
   const user = await requireUser();
+  if (!csrfToken || !(await validateCSRFToken(csrfToken))) {
+    return { ok: false, error: "Token CSRF inválido" };
+  }
   const row = await db
     .select()
     .from(questionnaires)
@@ -47,6 +53,8 @@ export async function accionEnviarCuestionario(
       respuestasJson: JSON.stringify(respuestas ?? {}),
       puntuacion,
     });
+    // Registrar actividad para streaks
+    recordDailyActivity(user.id, { hasQuestionnaire: true }).catch(console.error);
     revalidatePath("/cuestionarios");
     revalidatePath("/panel");
     return { ok: true, puntuacion };

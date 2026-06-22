@@ -1,6 +1,10 @@
 // Detalle admin de una consulta: ver hilo, responder, cerrar.
 import { asc, eq } from "drizzle-orm";
+import { CheckCircle2 } from "lucide-react";
 import { notFound } from "next/navigation";
+
+import { accionCerrarConsulta } from "@/actions/consultas";
+import { FormularioMensaje } from "@/app/(app)/consultas/[id]/formulario-mensaje";
 import { db } from "@/db";
 import {
   consultationMessages,
@@ -9,10 +13,8 @@ import {
   users,
 } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
+import { getCSRFToken } from "@/lib/csrf";
 import { formatearFechaHora } from "@/lib/formato";
-import { FormularioMensaje } from "@/app/(app)/consultas/[id]/formulario-mensaje";
-import { accionCerrarConsulta } from "@/actions/consultas";
-import { CheckCircle2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export default async function AdminConsultaDetallePage({
   params: { id: string };
 }) {
   await requireAdmin();
+  const csrfToken = await getCSRFToken();
   const id = Number(params?.id);
   if (!Number.isFinite(id)) notFound();
 
@@ -73,14 +76,15 @@ export default async function AdminConsultaDetallePage({
           >
             {cons.estado.replace("_", " ")}
           </span>
-          {cons.estado !== "cerrada" && (
-            <form
-              action={async () => {
-                "use server";
-                await accionCerrarConsulta(cons.id);
-              }}
-            >
-              <button
+        {cons.estado !== "cerrada" && (
+          <form
+            action={async () => {
+              "use server";
+              await accionCerrarConsulta(cons.id);
+            }}
+          >
+            <input type="hidden" name="csrf" value={csrfToken} />
+            <button
                 type="submit"
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border bg-card text-xs hover:bg-accent"
                 title="Cerrar consulta"
@@ -115,7 +119,7 @@ export default async function AdminConsultaDetallePage({
 
       {cons.estado !== "cerrada" && (
         <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <FormularioMensaje consultationId={cons.id} />
+          <FormularioMensaje consultationId={cons.id} csrfToken={csrfToken} />
         </div>
       )}
     </div>

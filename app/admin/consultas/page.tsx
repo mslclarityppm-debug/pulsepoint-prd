@@ -1,6 +1,7 @@
 // Bandeja de consultas para el admin.
-import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
+import Link from "next/link";
+
 import { db } from "@/db";
 import { consultations, userProfiles, users } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";

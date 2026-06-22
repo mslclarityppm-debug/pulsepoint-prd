@@ -1,22 +1,26 @@
 // Listado de métricas + gráficos de evolución (peso y tensión).
-import Link from "next/link";
 import { and, asc, eq } from "drizzle-orm";
 import { Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+
+import { accionEliminarMetrica } from "@/actions/metricas";
+import { GraficoEvolucion } from "@/components/ui-app/grafico-metrica";
 import { db } from "@/db";
 import { healthMetrics } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
-import { accionEliminarMetrica } from "@/actions/metricas";
+import { getCSRFToken } from "@/lib/csrf";
+import { validateCSRFToken } from "@/lib/csrf";
 import {
   clasificarTension,
   formatearFecha,
   pesoGramosAKg,
 } from "@/lib/formato";
-import { GraficoEvolucion } from "@/components/ui-app/grafico-metrica";
 
 export const dynamic = "force-dynamic";
 
 export default async function MetricasPage() {
   const user = await requireUser();
+  const csrfToken = await getCSRFToken();
 
   const pesos = await db
     .select()
@@ -130,12 +134,17 @@ export default async function MetricasPage() {
                         {m.notas ?? "—"}
                       </td>
                       <td className="py-2 pr-3 text-right">
-                        <form
-                          action={async () => {
-                            "use server";
-                            await accionEliminarMetrica(m.id);
-                          }}
-                        >
+                <form
+                  action={async (fd: FormData) => {
+                    "use server";
+                    const token = fd.get("csrf") as string;
+                    if (!(await validateCSRFToken(token))) {
+                      throw new Error("Token CSRF inválido");
+                    }
+                    await accionEliminarMetrica(m.id);
+                  }}
+                >
+                  <input type="hidden" name="csrf" value={csrfToken} />
                           <button
                             type="submit"
                             aria-label="Eliminar"

@@ -1,9 +1,11 @@
 // Página de registro: cuenta + perfil + consentimientos GDPR/salud.
+import { HeartPulse } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { HeartPulse } from "lucide-react";
+
 import { getCurrentUser } from "@/lib/auth";
 import { getCSRFToken } from "@/lib/csrf";
+
 import { FormularioRegistro } from "./formulario-registro";
 
 export const dynamic = "force-dynamic";
