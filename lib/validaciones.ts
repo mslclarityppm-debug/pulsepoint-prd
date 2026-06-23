@@ -22,22 +22,24 @@ export async function getAllowedRegisterDomains(): Promise<string[]> {
   }
 }
 
-export const emailSchema = z
+export const emailSchemaBase = z
   .string()
   .trim()
   .toLowerCase()
-  .email("Introduce un email válido")
+  .email("Introduce un email válido");
+
+export const emailSchema = emailSchemaBase
   .refine(async (val: string) => {
     const allowed = await getAllowedRegisterDomains();
     if (allowed.length === 0) return true;
     return allowed.some((domain) => val.endsWith(domain));
   }, {
     message: (() => {
-      // Nota: este mensaje se resuelve síncronamente. Si necesitás que sea dinámico,
-      // mejor manejarlo en el action/server component.
       return "El registro solo está permitido para ciertos dominios";
     })() as string,
   });
+
+export const loginEmailSchema = emailSchemaBase;
 
 export const passwordSchema = z
   .string()
@@ -77,12 +79,12 @@ export const registroSchema = z
   });
 
 export const loginSchema = z.object({
-  email: emailSchema,
+  email: loginEmailSchema,
   password: z.string().min(1, "Introduce tu contraseña"),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: emailSchema,
+  email: loginEmailSchema,
 });
 
 export const resetPasswordSchema = z
