@@ -37,5 +37,5 @@ yarn-error.log*
 console.log
 errors.log
 
-# local scripts (seed/init solo para desarrollo local)
-/scripts/
+# local scripts (solo init-db para desarrollo local, seed se mantiene para producción)
+/scripts/init-db.ts
