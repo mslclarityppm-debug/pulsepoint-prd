@@ -12,7 +12,11 @@ export async function GET() {
       .orderBy(allowedRegisterDomains.domain);
 
     return NextResponse.json({ dominios });
-  } catch (err) {
+  } catch (err: any) {
+    const msg = typeof err === 'object' && err && 'message' in err ? String((err as any).message) : '';
+    if (msg.includes('no such table')) {
+      return NextResponse.json({ dominios: [] });
+    }
     console.error("Error al obtener dominios públicos:", err);
     return NextResponse.json({ dominios: [] });
   }

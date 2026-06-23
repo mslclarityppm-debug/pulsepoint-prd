@@ -10,12 +10,12 @@ import { BADGES, type BadgeId, getUserCurrentStreak } from '@/lib/achievements-u
  * Verifica y desbloquea badges para un usuario
  */
 export async function checkAndUnlockBadges(userId: number) {
-  const userBadges = await db
+  const userBadges = await (db as any)
     .select({ badgeId: achievements.badgeId })
     .from(achievements)
     .where(eq(achievements.userId, userId));
 
-  const unlocked = new Set(userBadges.map((b) => b.badgeId));
+  const unlocked = new Set(userBadges.map((b: { badgeId: string }) => b.badgeId));
   const newBadges: BadgeId[] = [];
 
   // Check streak badges
@@ -158,7 +158,7 @@ export async function getEngagementStats() {
         .select({ count: count() })
         .from(streaks)
         .where(gte(streaks.date, cutoff))
-        .then((r) => r[0]?.count || 0)
+         .then((r: { count?: number }[]) => r[0]?.count || 0)
     : 0;
 
   return {
