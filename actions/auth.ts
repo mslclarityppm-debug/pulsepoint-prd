@@ -48,7 +48,7 @@ export async function accionRegistro(
     };
   }
 
-  const parsed = registroSchema.safeParse({
+  const parsed = await registroSchema.safeParseAsync({
     email: formData.get("email"),
     password: formData.get("password"),
     confirmar: formData.get("confirmar"),
