@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
 import { getCSRFToken } from "@/lib/csrf";
+import { db } from "@/db";
+import { allowedRegisterDomains } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 import { FormularioRegistro } from "./formulario-registro";
 
@@ -15,6 +18,13 @@ export default async function RegistroPage() {
   if (u) redirect(u.role === "admin" ? "/admin" : "/panel");
 
   const csrfToken = await getCSRFToken();
+
+  const dominiosRow = await db
+    .select({ domain: allowedRegisterDomains.domain })
+    .from(allowedRegisterDomains)
+    .where(eq(allowedRegisterDomains.active, true))
+    .orderBy(allowedRegisterDomains.domain);
+  const dominiosList = dominiosRow.map((d) => d.domain);
 
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-10">
@@ -33,6 +43,11 @@ export default async function RegistroPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Completa tus datos básicos y tus consentimientos para empezar.
           </p>
+          {dominiosList.length > 0 && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              El registro está permitido para: {dominiosList.join(", ")}
+            </p>
+          )}
           <FormularioRegistro csrfToken={csrfToken} />
           <p className="mt-6 text-sm text-muted-foreground text-center">
             ¿Ya tienes cuenta?{" "}

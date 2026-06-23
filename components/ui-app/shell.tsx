@@ -3,6 +3,7 @@ import {
   Activity,
   BookOpen,
   ClipboardCheck,
+  Globe2,
   HeartPulse,
   LayoutDashboard,
   LogOut,
@@ -38,6 +39,7 @@ export function Shell({
     { href: "/admin/usuarios", label: "Usuarios", Icon: Settings },
     { href: "/admin/contenidos", label: "Contenidos", Icon: BookOpen },
     { href: "/admin/consultas", label: "Consultas", Icon: MessageCircle },
+    { href: "/admin/dominios-permitidos", label: "Dominios", Icon: Globe2 },
   ];
   const items = esAdmin ? navAdmin : navUsuario;
 
