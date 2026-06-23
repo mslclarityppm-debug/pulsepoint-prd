@@ -5,7 +5,7 @@ dotenv.config({ path: ".env" });
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
-import { users, userProfiles, healthMetrics, contents, questionnaires, questionnaireResponses, consultations, consultationMessages, achievements, streaks, auditLogs, revokedSessions, passwordResetTokens, passwordHistory } from "./schema";
+import { users, userProfiles, healthMetrics, contents, questionnaires, questionnaireResponses, consultations, consultationMessages, achievements, streaks, auditLogs, revokedSessions, passwordResetTokens, passwordHistory, allowedRegisterDomains } from "./schema";
 
 const client = createClient({
   url: process.env.TURSO_DATABASE_URL!,
@@ -28,6 +28,7 @@ export const db = drizzle(client, {
     revokedSessions,
     passwordResetTokens,
     passwordHistory,
+    allowedRegisterDomains,
   },
 }) as LibSQLDatabase<{
   users: typeof users;
@@ -44,6 +45,7 @@ export const db = drizzle(client, {
   revokedSessions: typeof revokedSessions;
   passwordResetTokens: typeof passwordResetTokens;
   passwordHistory: typeof passwordHistory;
+  allowedRegisterDomains: typeof allowedRegisterDomains;
 }>;
 
-export { users, userProfiles, healthMetrics, contents, questionnaires, questionnaireResponses, consultations, consultationMessages, achievements, streaks, auditLogs, revokedSessions, passwordResetTokens, passwordHistory };
+export { users, userProfiles, healthMetrics, contents, questionnaires, questionnaireResponses, consultations, consultationMessages, achievements, streaks, auditLogs, revokedSessions, passwordResetTokens, passwordHistory, allowedRegisterDomains };

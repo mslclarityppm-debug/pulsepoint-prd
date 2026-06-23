@@ -15,7 +15,7 @@ import {
   validateResetToken,
   cleanupExpiredTokens,
 } from "@/lib/auth";
-import { loginSchema, registroSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validaciones";
+import { loginSchema, registroSchema, forgotPasswordSchema, resetPasswordSchema, getAllowedRegisterDomains } from "@/lib/validaciones";
 import { checkRateLimit, checkRegistrationRateLimit, resetRateLimit } from "@/lib/rate-limit";
 import { validateCSRFToken } from "@/lib/csrf";
 import { sendPasswordResetEmail } from "@/lib/email";
@@ -71,6 +71,18 @@ export async function accionRegistro(
   }
 
   const datos = parsed.data;
+
+  const allowedDomains = await getAllowedRegisterDomains();
+  if (allowedDomains.length > 0) {
+    const hasAccess = allowedDomains.some((d: string) => {
+      if (d.startsWith("@")) return datos.email.toLowerCase().endsWith(d);
+      return datos.email.toLowerCase() === d;
+    });
+    if (!hasAccess) {
+      return { error: `El registro solo está permitido para: ${allowedDomains.join(", ")}` };
+    }
+  }
+
   const existing = await db
     .select({ id: users.id })
     .from(users)

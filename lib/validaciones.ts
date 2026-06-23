@@ -1,31 +1,41 @@
 // Esquemas Zod compartidos para validación de entrada.
 import { z } from "zod";
+import { db } from "@/db";
+import { allowedRegisterDomains } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
-const getAllowedRegisterDomains = (): string[] => {
-  const domains = process.env.ALLOWED_REGISTER_DOMAINS?.trim();
-  if (!domains) return [];
-  // Parse domains like "@morningview.top,@empresa.com" into array
-  return domains
-    .split(",")
-    .map((d) => d.trim().toLowerCase())
-    .filter(Boolean);
-};
+export async function getAllowedRegisterDomains(): Promise<string[]> {
+  try {
+    const rows = await db
+      .select({ domain: allowedRegisterDomains.domain })
+      .from(allowedRegisterDomains)
+      .where(and(
+        eq(allowedRegisterDomains.active, true),
+      ));
+
+    return rows
+      .map((r) => r.domain.trim().toLowerCase())
+      .filter(Boolean);
+  } catch (err) {
+    console.error("No se pudieron cargar dominios permitidos:", err);
+    return [];
+  }
+}
 
 export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
   .email("Introduce un email válido")
-  .refine((val: string) => {
-    const allowed = getAllowedRegisterDomains();
+  .refine(async (val: string) => {
+    const allowed = await getAllowedRegisterDomains();
     if (allowed.length === 0) return true;
     return allowed.some((domain) => val.endsWith(domain));
   }, {
     message: (() => {
-      const allowed = getAllowedRegisterDomains();
-      if (allowed.length === 0)
-        return "Introduce un email válido";
-      return `El registro solo está permitido para: ${allowed.join(", ")}`;
+      // Nota: este mensaje se resuelve síncronamente. Si necesitás que sea dinámico,
+      // mejor manejarlo en el action/server component.
+      return "El registro solo está permitido para ciertos dominios";
     })() as string,
   });
 

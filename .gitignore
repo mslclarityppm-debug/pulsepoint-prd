@@ -39,3 +39,5 @@ errors.log
 
 # local scripts (solo init-db para desarrollo local, seed se mantiene para producción)
 /scripts/init-db.ts
+
+.vercel

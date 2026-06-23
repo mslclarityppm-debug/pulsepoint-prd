@@ -204,6 +204,16 @@ export const revokedSessions = sqliteTable("revoked_sessions", {
     .default(sql`(CURRENT_TIMESTAMP)`),
 });
 
+// --- Dominios permitidos para registro ---
+export const allowedRegisterDomains = sqliteTable("allowed_register_domains", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  domain: text("domain").notNull().unique(),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+});
+
 // --- Password History (prevent password reuse) ---
 export const passwordHistory = sqliteTable("password_history", {
   id: integer("id").primaryKey({ autoIncrement: true }),
